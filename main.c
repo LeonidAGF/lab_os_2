@@ -31,7 +31,7 @@ int main() {
         return 1;
     }
 
-    printf("Имя файла");
+    printf("Имя файла\n");
     c = getchar();
 
     while (c != '\n' && c != EOF) {

@@ -7,6 +7,7 @@ void plus_char(char** str, char data, long* capacity, long* length) {
         *capacity *= 2;
         char* new_str = (char*)realloc(*str, (*capacity) * sizeof(char));
         if (new_str == NULL) {
+            free(*str);
             exit(1);
         }
         *str = new_str;
@@ -25,7 +26,7 @@ int main(int argc, char *argv[]) {
     const char *filename = argv[1];
     int pipe2 = atoi(argv[2]);
     FILE *file = fopen(filename, "w");
-    long capacity = 16;
+    long capacity = 8;
     long length = 0;
     char *ptr;
     char *endptr;
@@ -43,12 +44,6 @@ int main(int argc, char *argv[]) {
     }
 
     char c = fgetc(stdin);
-    if (c == EOF) {
-        free(str);
-        fclose(file);
-        return 0;
-    }
-
     while (c != '\n' && c != EOF) {
         plus_char(&str, c, &capacity, &length);
         c = fgetc(stdin);
@@ -65,7 +60,7 @@ int main(int argc, char *argv[]) {
     first_num = strtof(ptr, &endptr);
 
     if (ptr == endptr) {
-        write(pipe2, "OK\n", 3);
+        write(pipe2, "ERR", 3);
         free(str);
         fclose(file);
         return 0;
