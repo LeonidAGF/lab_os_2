@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <string.h>
 
 void plus_char(char** str, char data, long* capacity, long* length) {
     if (*length + 2 > *capacity) {
@@ -24,24 +23,28 @@ int main(int argc, char *argv[]) {
     }
 
     const char *filename = argv[1];
-    int pipe2_fd = atoi(argv[2]);
-
+    int pipe2 = atoi(argv[2]);
     FILE *file = fopen(filename, "w");
+    long capacity = 16;
+    long length = 0;
+    char *ptr;
+    char *endptr;
+    float first_num;
+
     if (!file) {
         return 1;
     }
 
-    long capacity = 16;
-    long length = 0;
     char* str = (char*)malloc(capacity * sizeof(char));
-    if (!str) {
-        return 0;
-    }
+    if (!str)
+        write(pipe2, "ERR", 3);
     str[0] = '\0';
 
     char c = fgetc(stdin);
+
     if (c == EOF) {
         free(str);
+        fclose(file);
         return 0;
     }
 
@@ -50,14 +53,20 @@ int main(int argc, char *argv[]) {
         c = fgetc(stdin);
     }
 
-    char *ptr = str;
-    char *endptr;
+    if (length == 0) {
+        free(str);
+        write(pipe2, "ERR", 3);
+        fclose(file);
+        return 1;
+    }
 
-    float first_num = strtof(ptr, &endptr);
+    ptr = str;
+    first_num = strtof(ptr, &endptr);
 
     if (ptr == endptr) {
-        write(pipe2_fd, "OK\n", 3);
+        write(pipe2, "OK\n", 3);
         free(str);
+        fclose(file);
         return 0;
     }
 
@@ -82,15 +91,15 @@ int main(int argc, char *argv[]) {
     }
 
     if (div_by_zero) {
-        write(pipe2_fd, "ERR", 3);
-        fclose(file);
+        write(pipe2, "ERR", 3);
         free(str);
+        fclose(file);
         exit(1);
     }
 
-    fprintf(file, "Результат: %f\n", first_num);
+    fprintf(file, "%f\n", first_num);
     fflush(file);
-    write(pipe2_fd, "OK\n", 3);
+    write(pipe2, "OK\n", 3);
     free(str);
 
     fclose(file);

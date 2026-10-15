@@ -4,10 +4,10 @@
 #include <sys/wait.h>
 #include <string.h>
 
-void plus_char(char** str, char data, long* capacity, long* length) {
+void plus_char(char **str, char data, long *capacity, long *length) {
     if (*length + 2 > *capacity) {
         *capacity *= 2;
-        char* new_str = (char*)realloc(*str, (*capacity) * sizeof(char));
+        char *new_str = (char *) realloc(*str, (*capacity) * sizeof(char));
         if (new_str == NULL) {
             exit(1);
         }
@@ -19,30 +19,28 @@ void plus_char(char** str, char data, long* capacity, long* length) {
 }
 
 int main() {
-    long cap_name = 16;
+    long capacity_name = 16;
     long len_name = 0;
-    char* filename = (char*)malloc(cap_name * sizeof(char));
+    char *filename = (char *) malloc(capacity_name * sizeof(char));
+    char c;
+    long capacity_line = 16;
+    long len_line = 0;
+    char *line;
+
     if (!filename) {
-        perror("Ошибка выделения памяти");
         return 1;
     }
     filename[0] = '\0';
 
-    printf("Введите имя файла для результатов: ");
-    char c = getchar();
+    printf("Имя файла");
+    c = getchar();
 
     while (c != '\n' && c != EOF) {
-        plus_char(&filename, c, &cap_name, &len_name);
+        plus_char(&filename, c, &capacity_name, &len_name);
         c = getchar();
     }
 
-    while (len_name > 0 && (filename[len_name - 1] == ' ' || filename[len_name - 1] == '\r')) {
-        len_name--;
-        filename[len_name] = '\0';
-    }
-
     if (len_name == 0) {
-        printf("Имя файла не может быть пустым.\n");
         free(filename);
         return 1;
     }
@@ -51,12 +49,12 @@ int main() {
     int pipe2[2];
 
     if (pipe(pipe1) < 0 || pipe(pipe2) < 0) {
-        perror("Ошибка создания pipe");
         free(filename);
         return 1;
     }
 
     pid_t pid = fork();
+
     if (pid < 0) {
         free(filename);
         return 1;
@@ -85,61 +83,58 @@ int main() {
         char response[4];
         printf("Введите числа:\n");
 
-        while (1) {
-            printf("> ");
+        capacity_line = 16;
+        len_line = 0;
+        line = (char *) malloc(capacity_line * sizeof(char));
 
-            long cap_line = 16;
-            long len_line = 0;
-            char* line = (char*)malloc(cap_line * sizeof(char));
-            if (!line) {
-                break;
-            }
-            line[0] = '\0';
+        if (!line)
+            return 0;
 
+
+        line[0] = '\0';
+
+        c = getchar();
+        while (c != '\n' && c != EOF) {
+            plus_char(&line, c, &capacity_line, &len_line);
             c = getchar();
-            while (c != '\n' && c != EOF) {
-                plus_char(&line, c, &cap_line, &len_line);
-                c = getchar();
-            }
-
-            if (len_line == 0) {
-                free(line);
-                if (c == EOF) break;
-                continue;
-            }
-
-            if (strcmp(line, "exit") == 0) {
-                free(line);
-                break;
-            }
-
-            plus_char(&line, '\n', &cap_line, &len_line);
-
-            write(pipe1[1], line, len_line);
-
-            ssize_t bytes_read = read(pipe2[0], response, 3);
-
-            if (bytes_read > 0) {
-                response[3] = '\0';
-                if (strncmp(response, "ERR", 3) == 0) {
-                    free(line);
-                    break;
-                }
-            } else {
-                free(line);
-                break;
-            }
-
-            free(line);
         }
+
+        if (len_line == 0) {
+            free(line);
+            if (c == EOF)
+                return 1;
+        }
+
+        if (strcmp(line, "exit") == 0) {
+            free(line);
+            return 1;
+        }
+
+        plus_char(&line, '\n', &capacity_line, &len_line);
+        if (write(pipe1[1], line, len_line) < 0) {
+            free(line);
+            return 1;
+        }
+
+        long long bytes_read = read(pipe2[0], response, 3);
+
+        if (bytes_read > 0) {
+            response[3] = '\0';
+            if (strncmp(response, "ERR", 3) == 0) {
+                free(line);
+                return 1;
+            }
+        } else {
+            free(line);
+            return 1;
+        }
+
+        free(line);
 
         close(pipe1[1]);
         close(pipe2[0]);
         waitpid(pid, NULL, 0);
-
-        printf("Работа завершена.\n");
         free(filename);
     }
-
     return 0;
 }
