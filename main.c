@@ -84,6 +84,10 @@ int main() {
         capacity_line = 16;
         len_line = 0;
         line = (char *) malloc(capacity_line * sizeof(char));
+        if (!line) {
+            free(filename);
+            return 1;
+        }
 
         c = getchar();
         while (c != '\n' && c != EOF) {
@@ -94,6 +98,7 @@ int main() {
         plus_char(&line, '\n', &capacity_line, &len_line);
         if (write(pipe1[1], line, len_line) < 0) {
             free(line);
+            free(filename);
             return 1;
         }
 
@@ -103,10 +108,13 @@ int main() {
             response[3] = '\0';
             if (strncmp(response, "ERR", 3) == 0) {
                 free(line);
+                free(filename);
                 return 1;
             }
+
         } else {
             free(line);
+            free(filename);
             return 1;
         }
 
