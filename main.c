@@ -30,7 +30,6 @@ int main() {
     if (!filename) {
         return 1;
     }
-    filename[0] = '\0';
 
     printf("Имя файла");
     c = getchar();
@@ -53,7 +52,7 @@ int main() {
         return 1;
     }
 
-    pid_t pid = fork();
+    long long pid = fork();
 
     if (pid < 0) {
         free(filename);
@@ -70,8 +69,7 @@ int main() {
         dup2(pipe2[1], 3);
         close(pipe2[1]);
 
-        char fd_str[10];
-        snprintf(fd_str, sizeof(fd_str), "%d", 3);
+        char fd_str[2] = "3";
 
         execl("./child", "child", filename, fd_str, NULL);
 
@@ -87,27 +85,10 @@ int main() {
         len_line = 0;
         line = (char *) malloc(capacity_line * sizeof(char));
 
-        if (!line)
-            return 0;
-
-
-        line[0] = '\0';
-
         c = getchar();
         while (c != '\n' && c != EOF) {
             plus_char(&line, c, &capacity_line, &len_line);
             c = getchar();
-        }
-
-        if (len_line == 0) {
-            free(line);
-            if (c == EOF)
-                return 1;
-        }
-
-        if (strcmp(line, "exit") == 0) {
-            free(line);
-            return 1;
         }
 
         plus_char(&line, '\n', &capacity_line, &len_line);
@@ -130,7 +111,6 @@ int main() {
         }
 
         free(line);
-
         close(pipe1[1]);
         close(pipe2[0]);
         waitpid(pid, NULL, 0);

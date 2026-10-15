@@ -36,12 +36,13 @@ int main(int argc, char *argv[]) {
     }
 
     char* str = (char*)malloc(capacity * sizeof(char));
-    if (!str)
+    if (!str) {
         write(pipe2, "ERR", 3);
-    str[0] = '\0';
+        fclose(file);
+        return 1;
+    }
 
     char c = fgetc(stdin);
-
     if (c == EOF) {
         free(str);
         fclose(file);
@@ -98,10 +99,9 @@ int main(int argc, char *argv[]) {
     }
 
     fprintf(file, "%f\n", first_num);
-    fflush(file);
+    fclose(file);
     write(pipe2, "OK\n", 3);
     free(str);
 
-    fclose(file);
     return 0;
 }
